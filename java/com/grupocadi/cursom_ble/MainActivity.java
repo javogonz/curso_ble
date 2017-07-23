@@ -14,10 +14,15 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import java.util.List;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -54,13 +59,13 @@ public class MainActivity extends AppCompatActivity {
 
         detenerEscaneoButton.setVisibility(View.INVISIBLE);
 
-        btManager = (BluetoothManager)getSystemService(Context.BLUETOOTH_SERVICE);
+        btManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         btAdapter = btManager.getAdapter();
         btScanner = btAdapter.getBluetoothLeScanner();
 
         if (btAdapter != null && !btAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableIntent,REQUEST_ENABLE_BT);
+            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
         }
 
         // Debemos estar seguros de tener acceso a - coarse location. Si no, entonces que el usuario la habilite
@@ -82,15 +87,95 @@ public class MainActivity extends AppCompatActivity {
     private ScanCallback leScanCallback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
-            perifericoTextView.append("Nombre del dispositivo: " + result.getDevice().getName() + " RSSI: " + result.getRssi() + "\n");
+            //perifericoTextView.append("Nombre del dispositivo: " + result.getDevice().getName() + " RSSI: " + result.getRssi() + "\n");
+            ;
 
-            // auto scroll para TextView
-            final int scrollTam = perifericoTextView.getLayout().getLineTop(perifericoTextView.getLineCount()) - perifericoTextView.getHeight();
-            // si no se requiere del scroll, scrollCantidad sera <=0
-            if (scrollTam > 0)
-                perifericoTextView.scrollTo(0, scrollTam);
+
+            if (result == null
+                    || result.getDevice() == null
+                    || TextUtils.isEmpty(result.getDevice().getName()))
+                return;
+
+            if (result.getScanRecord() != null) {
+                // EJEMPLO 01
+                perifericoTextView.append("Dispositivo: " + result.getDevice().getName() + " RSSI: " + result.getRssi() + "\n");
+                perifericoTextView.append("Mac: " + result.getDevice().getAddress() + "\n\n");
+
+                // EJEMPLO 02
+                /*perifericoTextView.append("Dispositivo: " + result.getDevice().getName() + " RSSI: " + result.getRssi() + "\n");
+                perifericoTextView.append("Mac: " + result.getDevice().getAddress() + "\n");
+                perifericoTextView.append("ScanRecord: " + result.getScanRecord().toString() + "\n");*/
+
+                // EJEMPLO 03
+                /*perifericoTextView.append("Dispositivo: " + result.getDevice().getName() + " RSSI: " + result.getRssi() + "\n");
+                perifericoTextView.append("Mac: " + result.getDevice().getAddress() + "\n");
+                perifericoTextView.append("UUID: " + getUUID(result) + "\n\n");*/
+
+                // EJEMPLO 04
+                /*perifericoTextView.append("Dispositivo: " + result.getDevice().getName() + " RSSI: " + result.getRssi() + "\n");
+                perifericoTextView.append("Mac: " + result.getDevice().getAddress() + "\n");
+                perifericoTextView.append("UUID: " + result.getDevice().getUuids().toString() + "\n\n");*/
+
+                // EJEMPLO 05
+                /*perifericoTextView.append("Dispositivo: " + result.getDevice().getName() + " RSSI: " + result.getRssi() + "\n");
+                perifericoTextView.append("Mac: " + result.getDevice().getAddress() + "\n");
+                List<ParcelUuid> uuids = result.getScanRecord().getServiceUuids();
+                perifericoTextView.append("UUID: " + uuids.toString() + "\n\n");*/
+
+                // EJEMPLO 06
+                /*ScanRecord record = result.getScanRecord();
+                UUID uuid = null;
+                //// https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
+                byte[] appleData = record.getManufacturerSpecificData(0x004c);
+                if (appleData != null) {
+                    ByteBuffer bb = ByteBuffer.wrap(appleData, 2, 16);
+                    uuid = new UUID(bb.getLong(), bb.getLong());
+                }*/
+
+                /*perifericoTextView.append("Dispositivo: " + result.getDevice().getName() + " RSSI: " + result.getRssi() + "\n");
+                perifericoTextView.append("Mac: " + result.getDevice().getAddress() + "\n");
+                perifericoTextView.append("UUID: " + uuid.toString() + "\n\n");*/
+
+                // EJEMPLO 07
+                /*perifericoTextView.append("Dispositivo: " + result.getDevice().getName() + " RSSI: " + result.getRssi() + "\n");
+                perifericoTextView.append("Mac: " + result.getDevice().getAddress() + "\n");
+                perifericoTextView.append("UUID: " + result.getScanRecord().getServiceData(result.getScanRecord().getServiceUuids().get(0)) + "\n\n");*/
+
+
+
+                // auto scroll para TextView
+                final int scrollTam = perifericoTextView.getLayout().getLineTop(perifericoTextView.getLineCount()) - perifericoTextView.getHeight();
+                // si no se requiere del scroll, scrollCantidad sera <=0
+                if (scrollTam > 0)
+                    perifericoTextView.scrollTo(0, scrollTam);
+
+            } else {
+                return;
+            }
+
         }
+
+        @Override
+        public void onBatchScanResults(List<ScanResult> results) {
+            super.onBatchScanResults(results);
+        }
+
+        @Override
+        public void onScanFailed(int errorCode) {
+            Toast.makeText(getApplicationContext(),"onScanResult error: "+errorCode,Toast.LENGTH_SHORT).show();
+            super.onScanFailed(errorCode);
+        }
+
     };
+
+    public String getUUID(ScanResult result) {
+        String UUIDx = UUID
+                .nameUUIDFromBytes(result.getScanRecord().getBytes()).toString();
+
+        // String UUIDx = result.getScanRecord().getServiceUuids().toString();
+        return UUIDx;
+    }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -143,4 +228,5 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
 }
